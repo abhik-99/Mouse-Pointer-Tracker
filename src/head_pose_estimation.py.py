@@ -60,15 +60,19 @@ class Model_X:
         return
 
     def preprocess_input(self, image):
-    '''
-    Before feeding the data into the model for inference,
-    you might have to preprocess it. This function is where you can do that.
-    '''
-        raise NotImplementedError
+        '''
+        Before feeding the data into the model for inference,
+        you might have to preprocess it. This function is where you can do that.
+        '''
+        img = cv2.resize(image, tuple(self.input_shape[2:][::-1])) #resizing the image
+        img = img.transpose((2,0,1)) #brining channel to the front.
+        img = img.reshape(1, *img.shape)
+
+        return img
 
     def preprocess_output(self, outputs):
-    '''
-    Before feeding the output of this model to the next model,
-    you might have to preprocess the output. This function is where you can do that.
-    '''
+        '''
+        Before feeding the output of this model to the next model,
+        you might have to preprocess the output. This function is where you can do that.
+        '''
         raise NotImplementedError

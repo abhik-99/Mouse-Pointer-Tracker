@@ -65,7 +65,11 @@ class Model_X:
         Before feeding the data into the model for inference,
         you might have to preprocess it. This function is where you can do that.
         '''
-        raise NotImplementedError
+        img = cv2.resize(image, tuple(self.input_shape[2:][::-1])) #resizing the image
+        img = img.transpose((2,0,1)) #brining channel to the front.
+        img = img.reshape(1, *img.shape)
+
+        return img
 
     def preprocess_output(self, outputs):
         '''
