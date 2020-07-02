@@ -1,7 +1,8 @@
-'''
-This is a sample class for a model. You may choose to use it as-is or make any changes to it.
-This has been provided just to give you an idea of how to structure your model class.
-'''
+
+import os
+import numpy as np
+import cv2
+from openvino.inference import IECore
 
 class Model_X:
     '''
@@ -46,7 +47,7 @@ class Model_X:
         TODO: You will need to complete this method.
         This method is meant for running predictions on the input image.
         '''
-        img = self.preprocess_input(image)
+        img = self.preprocess_input(image.copy())
 
         return self.net.infer({self.input_name: img})
 

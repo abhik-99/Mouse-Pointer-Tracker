@@ -1,7 +1,8 @@
-'''
-This is a sample class for a model. You may choose to use it as-is or make any changes to it.
-This has been provided just to give you an idea of how to structure your model class.
-'''
+
+import os
+import numpy as np
+import cv2
+from openvino.inference import IECore
 
 class Model_X:
     '''
@@ -11,7 +12,18 @@ class Model_X:
         '''
         TODO: Use this to set your instance variables.
         '''
-        raise NotImplementedError
+        self.model_name, self.device = model_name, device
+        self.core = IECore()
+        
+        if device == 'CPU' and extensions != None:
+            self.core.add_extension(extension_path = extensions, device = device)
+
+        model_xml = self.model_name
+        model_bin = os.path.splitext(model_xml)[0] + ".bin"
+
+        self.model = self.core.read_network(model = model_xml, weights = model_bin)
+
+        return
 
     def load_model(self):
         '''
@@ -19,17 +31,33 @@ class Model_X:
         This method is for loading the model to the device specified by the user.
         If your model requires any Plugins, this is where you can load them.
         '''
-        raise NotImplementedError
+        self.input_name = next(iter(self.model.inputs))
+        self.output_name = next(iter(self.model.outputs))
+
+        self.input_shape = self.model.inputs[self.input_name].shape
+        self.output_shape = self.model.outputs[self.output_name].shape
+
+        self.net = self.core.load_network(self.model, self.device)
+
+        return self.net
 
     def predict(self, image):
         '''
         TODO: You will need to complete this method.
         This method is meant for running predictions on the input image.
         '''
-        raise NotImplementedError
+        img = self.preprocess_input(image.copy())
+
+        return self.net.infer({self.input_name: img})
 
     def check_model(self):
-        raise NotImplementedError
+        supported_layers = self.core.query_network(network = self.model, device = self.device)
+        unsupported_layers = [l for l in self.model.layers.keys() if l not in supported_layers]
+        if len(unsupported_layers) != 0:
+            print("Unsupported layers found: {}".format(unsupported_layers))
+            print("Check whether extensions are available to add to IECore.")
+
+        return
 
     def preprocess_input(self, image):
     '''
