@@ -1,0 +1,15 @@
+Folder PATH listing for volume OS
+Volume serial number is CC71-EF11
+C:.
++---bin
++---IR
+|   \---intel
+|       +---face-detection-adas-binary-0001
+|       |   \---FP32-INT1
+|       +---gaze-estimation-adas-0002
+|       |   \---FP16
+|       +---head-pose-estimation-adas-0001
+|       |   \---FP16
+|       \---landmarks-regression-retail-0009
+|           \---FP16
+\---src
