@@ -1,6 +1,4 @@
-Folder PATH listing for volume OS
-Volume serial number is CC71-EF11
-C:.
+
 +---bin
 +---IR
 |   \---intel

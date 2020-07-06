@@ -2,9 +2,9 @@
 import os
 import numpy as np
 import cv2
-from openvino.inference import IECore
+from openvino.inference_engine import IECore
 
-class Model_X:
+class FaceDetectionModel:
     '''
     Class for the Face Detection Model.
     '''
@@ -31,6 +31,8 @@ class Model_X:
         This method is for loading the model to the device specified by the user.
         If your model requires any Plugins, this is where you can load them.
         '''
+
+
         self.input_name = next(iter(self.model.inputs))
         self.output_name = next(iter(self.model.outputs))
 
@@ -46,7 +48,7 @@ class Model_X:
         TODO: You will need to complete this method.
         This method is meant for running predictions on the input image.
         '''
-        img = self.preprocess_input(image.copy())
+        img = self.preprocess_input(image)
 
         return self.net.infer({self.input_name: img})
 
@@ -57,7 +59,7 @@ class Model_X:
             print("Unsupported layers found: {}".format(unsupported_layers))
             print("Check whether extensions are available to add to IECore.")
 
-        return
+        return 
 
     def preprocess_input(self, image):
         '''
@@ -70,9 +72,33 @@ class Model_X:
 
         return img
 
-    def preprocess_output(self, outputs):
+    def preprocess_output(self, image, outputs, prob_threshold = 0.6):
         '''
         Before feeding the output of this model to the next model,
         you might have to preprocess the output. This function is where you can do that.
         '''
-        raise NotImplementedError
+        coords = []
+        outs = outputs[self.output_name][0][0]
+        for each in outs:
+            conf = each[2]
+            if conf>prob_threshold:
+                x_min = each[3]
+                y_min = each[4]
+                x_max = each[5]
+                y_max = each[6]
+                coords.append([x_min,y_min,x_max,y_max])
+
+        if (len(coords) == 0):
+            return 0, 0
+
+        coords = coords[0] #Selecting only the first face detected
+
+        h = image.shape[0]
+        w = image.shape[1]
+
+        coords = coords * np.array([w, h, w, h])
+        coords = coords.astype(np.int32)
+        
+        cropped_face = image[coords[1]:coords[3], coords[0]:coords[2]]
+
+        return cropped_face, coords

@@ -66,9 +66,8 @@ def build_argparser():
 
 
 def main():
-
-    # Grab command line args
     args = build_argparser().parse_args()
+
     preview_flags = args.preview_flags
     
     logger = logging.getLogger()
@@ -118,6 +117,7 @@ def main():
         if not ret:
             break
         frame_count+=1
+
         if frame_count%5==0:
             cv2.imshow('video',cv2.resize(frame,(500,500)))
     
@@ -134,7 +134,7 @@ def main():
                                 - Facial Landmark Detection Model -  
         """
 
-        croppedFace, _ = fdm.predict(frame.copy(), args.prob_threshold)
+        croppedFace, _ = fdm.preprocess_output(frame.copy(), fdm.predict(frame.copy(), args.prob_threshold))
 
         if type(croppedFace)==int:
             logger.error('Unable to detect the face.')
@@ -142,11 +142,11 @@ def main():
                 break
             continue
         
-        hp_out = hpem.predict(croppedFace.copy())
+        hp_out = hpem.preprocess_output( hpem.predict(fdm.preprocess_output(croppedFace.copy()) ))
         
-        left_eye, right_eye, eye_coords = fldm.predict(croppedFace.copy())
+        left_eye, right_eye, eye_coords = fldm.preprocess_output(frame.copy(), fldm.predict(croppedFace.copy()))
         
-        new_mouse_coord, gaze_vector = gem.predict(left_eye, right_eye, hp_out)
+        new_mouse_coord, gaze_vector = gem.preprocess_output(gem.predict(left_eye, right_eye, hp_out))
         
         if (not len(preview_flags)==0):
             preview_frame = frame.copy()

@@ -2,9 +2,9 @@
 import os
 import numpy as np
 import cv2
-from openvino.inference import IECore
+from openvino.inference_engine import IECore
 
-class Model_X:
+class FacialLandmarksDetectionModel:
     '''
     Class for the Face Detection Model.
     '''
@@ -71,9 +71,37 @@ class Model_X:
 
         return img
 
-    def preprocess_output(self, outputs):
+    def preprocess_output(self, image, outputs):
         '''
         Before feeding the output of this model to the next model,
         you might have to preprocess the output. This function is where you can do that.
         '''
-        raise NotImplementedError
+        outs = outputs[self.output_names][0]
+ 
+        coords = (outs[0].tolist()[0][0], outs[1].tolist()[0][0], outs[2].tolist()[0][0], outs[3].tolist()[0][0])
+        
+        h=image.shape[0]
+        w=image.shape[1]
+
+        coords = coords* np.array([w, h, w, h])
+        coords = coords.astype(np.int32) #(lefteye_x, lefteye_y, righteye_x, righteye_y)
+        
+        re_xmin=coords[2]-10
+        re_ymin=coords[3]-10
+        re_xmax=coords[2]+10
+        re_ymax=coords[3]+10
+        
+        le_xmin=coords[0]-10
+        le_ymin=coords[1]-10
+        le_xmax=coords[0]+10
+        le_ymax=coords[1]+10
+
+        #cv2.rectangle(image,(le_xmin,le_ymin),(le_xmax,le_ymax),(255,0,0))
+        #cv2.rectangle(image,(re_xmin,re_ymin),(re_xmax,re_ymax),(255,0,0))
+        #cv2.imshow("Image",image)
+
+        left_eye =  image[le_ymin:le_ymax, le_xmin:le_xmax]
+        right_eye = image[re_ymin:re_ymax, re_xmin:re_xmax]
+        eye_coords = [[le_xmin,le_ymin,le_xmax,le_ymax], [re_xmin,re_ymin,re_xmax,re_ymax]]
+        
+        return left_eye, right_eye, eye_coords

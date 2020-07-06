@@ -2,9 +2,9 @@
 import os
 import numpy as np
 import cv2
-from openvino.inference import IECore
+from openvino.inference_engine import IECore
 
-class Model_X:
+class GazeEstimationModel:
     '''
     Class for the Face Detection Model.
     '''
@@ -31,24 +31,24 @@ class Model_X:
         This method is for loading the model to the device specified by the user.
         If your model requires any Plugins, this is where you can load them.
         '''
-        self.input_name = next(iter(self.model.inputs))
-        self.output_name = next(iter(self.model.outputs))
+        self.input_names = [i for i in self.network.inputs.keys()]
+        self.output_names = [i for i in self.network.outputs.keys()]
 
-        self.input_shape = self.model.inputs[self.input_name].shape
-        self.output_shape = self.model.outputs[self.output_name].shape
+
+        self.input_shape = self.network.inputs[self.input_names[1]].shape
 
         self.net = self.core.load_network(self.model, self.device)
 
         return self.net
 
-    def predict(self, image):
+    def predict(self, head_pose_angles, l_eye, r_eye):
         '''
         TODO: You will need to complete this method.
         This method is meant for running predictions on the input image.
         '''
-        img = self.preprocess_input(image.copy())
+        l_eye_processed, r_eye_processed = self.preprocess_input(l_eye.copy()), self.preprocess_input(r_eye.copy())
 
-        return self.net.infer({self.input_name: img})
+        return self.net.infer({'head_pose_angles':head_pose_angles, 'left_eye_image':l_eye_processed, 'right_eye_image':r_eye_processed})
 
     def check_model(self):
         supported_layers = self.core.query_network(network = self.model, device = self.device)
@@ -75,4 +75,12 @@ class Model_X:
         Before feeding the output of this model to the next model,
         you might have to preprocess the output. This function is where you can do that.
         '''
-        raise NotImplementedError
+        gaze_vector = outputs[self.output_names[0]].tolist()[0]
+        #gaze_vector = gaze_vector / cv2.norm(gaze_vector)
+        rollValue = hpa[2] #angle_r_fc output from HeadPoseEstimation model
+        cosValue = math.cos(rollValue * math.pi / 180.0)
+        sinValue = math.sin(rollValue * math.pi / 180.0)
+        
+        newx = gaze_vector[0] * cosValue + gaze_vector[1] * sinValue
+        newy = -gaze_vector[0] *  sinValue+ gaze_vector[1] * cosValue
+        return (newx,newy), gaze_vector

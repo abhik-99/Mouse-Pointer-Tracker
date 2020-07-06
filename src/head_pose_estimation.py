@@ -2,9 +2,9 @@
 import os
 import numpy as np
 import cv2
-from openvino.inference import IECore
+from openvino.inference_engine import IECore
 
-class Model_X:
+class HeadPoseEstimationModel:
     '''
     Class for the Face Detection Model.
     '''
@@ -31,13 +31,9 @@ class Model_X:
         This method is for loading the model to the device specified by the user.
         If your model requires any Plugins, this is where you can load them.
         '''
-
-
-        self.input_name = next(iter(self.model.inputs))
-        self.output_name = next(iter(self.model.outputs))
-
-        self.input_shape = self.model.inputs[self.input_name].shape
-        self.output_shape = self.model.outputs[self.output_name].shape
+        self.input_name = next(iter(self.network.inputs))
+        self.input_shape = self.network.inputs[self.input_name].shape
+        self.output_names = [i for i in self.network.outputs.keys()]
 
         self.net = self.core.load_network(self.model, self.device)
 
@@ -48,7 +44,7 @@ class Model_X:
         TODO: You will need to complete this method.
         This method is meant for running predictions on the input image.
         '''
-        img = self.preprocess_input(image)
+        img = self.preprocess_input(image.copy())
 
         return self.net.infer({self.input_name: img})
 
@@ -59,7 +55,7 @@ class Model_X:
             print("Unsupported layers found: {}".format(unsupported_layers))
             print("Check whether extensions are available to add to IECore.")
 
-        return 
+        return
 
     def preprocess_input(self, image):
         '''
@@ -72,33 +68,14 @@ class Model_X:
 
         return img
 
-    def preprocess_output(self, image, outputs, prob_threshold = 0.6):
+    def preprocess_output(self, outputs):
         '''
         Before feeding the output of this model to the next model,
         you might have to preprocess the output. This function is where you can do that.
         '''
-        coords = []
-        outs = outputs[self.output_name][0][0]
-        for each in outs:
-            conf = each[2]
-            if conf>prob_threshold:
-                x_min = each[3]
-                y_min = each[4]
-                x_max = each[5]
-                y_max = each[6]
-                coords.append([x_min,y_min,x_max,y_max])
+        outs = []
+        outs.append(outputs['angle_y_fc'].tolist()[0][0])
+        outs.append(outputs['angle_p_fc'].tolist()[0][0])
+        outs.append(outputs['angle_r_fc'].tolist()[0][0])
 
-        if (len(coords) == 0):
-            return 0, 0
-
-        coords = coords[0] #Selecting only the first face detected
-
-        h = image.shape[0]
-        w = image.shape[1]
-
-        coords = coords * np.array([w, h, w, h])
-        coords = coords.astype(np.int32)
-        
-        cropped_face = image[coords[1]:coords[3], coords[0]:coords[2]]
-
-        return cropped_face, coords
+        return outs
