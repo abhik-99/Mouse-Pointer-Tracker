@@ -53,7 +53,7 @@ class FaceDetectionModel:
         return self.net.infer({self.input_name: img})
 
     def check_model(self):
-        supported_layers = self.core.query_network(network = self.model, device = self.device)
+        supported_layers = self.core.query_network(network = self.model, device_name = self.device)
         unsupported_layers = [l for l in self.model.layers.keys() if l not in supported_layers]
         if len(unsupported_layers) != 0:
             print("Unsupported layers found: {}".format(unsupported_layers))

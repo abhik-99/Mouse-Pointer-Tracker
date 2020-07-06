@@ -9,7 +9,7 @@ from gaze_estimation import GazeEstimationModel
 from head_pose_estimation import HeadPoseEstimationModel
 from mouse_controller import MouseController
 from argparse import ArgumentParser
-from input_feeder import input_feeder
+from input_feeder import InputFeeder
 
 def build_argparser():
     '''
@@ -74,18 +74,25 @@ def main():
     input_path = args.input
 
     if input_path.lower() == 'cam':
-        input_feed = input_feeder('cam')
+        input_feed = InputFeeder('cam')
     else:
         if not os.path.isfile(input_path):
             logger.error('Unable to find specified video file')
             exit(1)
-        input_feed = input_feeder('video', input_path)
+        file_extension = input_path.split(".")[-1]
+        if(file_extension in ['jpg', 'jpeg', 'bmp']):
+            input_feed = InputFeeder('image', input_path)
+        elif(file_extension in ['avi', 'mp4']):
+            input_feed = InputFeeder('video', input_path)
+        else:
+            logger.error("Unsupported file Extension. Allowed ['jpg', 'jpeg', 'bmp', 'avi', 'mp4']")
+            exit(1)
     
-    modelPathDict = {'face_detect':args.facedetectionmodel, 'face_landmark_regress':args.faciallandmarkmodel, 
-                    'head_pose':args.headposemodel, 'gaze_estimate':args.gazeestimationmodel}
+    modelPathDict = {'face_detect':args.face_detection_model, 'face_landmark_regress':args.facial_landmark_model, 
+                    'head_pose':args.head_pose_model, 'gaze_estimate':args.gaze_estimation_model}
     
-    for pathname, filepath in modelPathDict:
-        if not os.path.isfile(modelPathDict[filepath]):
+    for pathname in modelPathDict:
+        if not os.path.isfile(modelPathDict[pathname]):
             logger.error('Unable to find specified '+pathname+' xml file')
             exit(1)
 
@@ -181,7 +188,7 @@ def main():
 
     logger.error('VideoStream ended...')
     cv2.destroyAllWindows()
-    input_feeder.close()
+    input_feed.close()
      
     
 

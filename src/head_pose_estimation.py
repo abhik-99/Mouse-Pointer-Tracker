@@ -31,9 +31,9 @@ class HeadPoseEstimationModel:
         This method is for loading the model to the device specified by the user.
         If your model requires any Plugins, this is where you can load them.
         '''
-        self.input_name = next(iter(self.network.inputs))
-        self.input_shape = self.network.inputs[self.input_name].shape
-        self.output_names = [i for i in self.network.outputs.keys()]
+        self.input_name = next(iter(self.model.inputs))
+        self.input_shape = self.model.inputs[self.input_name].shape
+        self.output_names = [i for i in self.model.outputs.keys()]
 
         self.net = self.core.load_network(self.model, self.device)
 
@@ -49,7 +49,7 @@ class HeadPoseEstimationModel:
         return self.net.infer({self.input_name: img})
 
     def check_model(self):
-        supported_layers = self.core.query_network(network = self.model, device = self.device)
+        supported_layers = self.core.query_network(network = self.model, device_name = self.device)
         unsupported_layers = [l for l in self.model.layers.keys() if l not in supported_layers]
         if len(unsupported_layers) != 0:
             print("Unsupported layers found: {}".format(unsupported_layers))
