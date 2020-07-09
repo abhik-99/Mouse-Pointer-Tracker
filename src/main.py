@@ -1,7 +1,9 @@
 import os
+import sys
 import logging
 import numpy as np
 import cv2
+import pyautogui
 
 from face_detection import FaceDetectionModel
 from facial_landmarks_detection import FacialLandmarksDetectionModel
@@ -10,6 +12,9 @@ from head_pose_estimation import HeadPoseEstimationModel
 from mouse_controller import MouseController
 from argparse import ArgumentParser
 from input_feeder import InputFeeder
+
+FRAME_WIDTH = 500
+FRAME_HEIGHT = 500
 
 def build_argparser():
     '''
@@ -57,10 +62,11 @@ def build_argparser():
                              'CPU, GPU, FPGA or MYRIAD is acceptable. Sample '
                              'will look for a suitable plugin for device '
                              'specified (CPU by default). Please note that only CPU is available in Author\'s Workstation')
-    parser.add_argument('-o', '--output_file', type = str, default = 'n', required = False, 
-                        help = 'If specified, then the output file by the name \'output.<extension>\'',
-                        'is generated in the ./src directory. This file shows the detection output.',
-                        'Accepted Values:- [n(default), y]')
+    parser.add_argument('-o', '--output_file', type = str, default = 'y', required = False, 
+                        help = 'If specified, then the output file by the name \'output.<extension>\''
+                        'is generated in the ./src directory. This file shows the detection output.'
+                        'Accepted Values:- [n(default), y]. '
+                        'Please note that this option is only available for Linux at the moment.')
     
     return parser
 
@@ -88,6 +94,20 @@ def main():
         else:
             logger.error("Unsupported file Extension. Allowed ['jpg', 'jpeg', 'bmp', 'avi', 'mp4']")
             exit(1)
+
+    if sys.platform == "linux" or sys.platform == "linux2":
+        #CODEC = 0x00000021
+        CODEC = cv2.VideoWriter_fourcc(*"mp4v")
+    elif sys.platform == "darwin":
+        CODEC = cv2.VideoWriter_fourcc('M','J','P','G')
+    else:
+        print("Unsupported OS.")
+        exit(1)
+
+    file_flag = False
+    if args.output_file.lower() == 'y':
+        file_flag = True
+        out = cv2.VideoWriter('output.mp4', CODEC, 30, (FRAME_WIDTH, FRAME_HEIGHT))
     
     modelPathDict = {'face_detect':args.face_detection_model, 'face_landmark_regress':args.facial_landmark_model, 
                     'head_pose':args.head_pose_model, 'gaze_estimate':args.gaze_estimation_model}
@@ -124,12 +144,14 @@ def main():
     for ret, frame in input_feed.next_batch():
         if not ret:
             break
+        
         frame_count+=1
 
-        if frame_count%2==0:
-            cv2.imshow('video',cv2.resize(frame,(500,500)))
+        if frame_count == 15:
+            break
     
         key = cv2.waitKey(60)
+
         """
         Sequence of model execution:-
         1. Predict from each model.
@@ -142,54 +164,73 @@ def main():
                                 - Facial Landmark Detection Model -  
         """
 
-        croppedFace, _ = fdm.preprocess_output(frame.copy(), fdm.predict(frame.copy()), args.prob_threshold)
+        cropped_face, face_coords = fdm.preprocess_output(frame.copy(), fdm.predict(frame.copy()), args.prob_threshold)
 
-        if type(croppedFace)==int:
+        if type(cropped_face)==int:
             logger.error('Unable to detect the face.')
             if key==27:
                 break
             continue
         
-        hp_out = hpem.preprocess_output(hpem.predict(croppedFace.copy()))
+        hp_out = hpem.preprocess_output(hpem.predict(cropped_face.copy()))
         
-        left_eye, right_eye, eye_coords = fldm.preprocess_output(frame.copy(), fldm.predict(croppedFace.copy()))
+        left_eye, right_eye, eye_coords = fldm.preprocess_output(frame.copy(), fldm.predict(cropped_face.copy()))
         
         new_mouse_coord, gaze_vector = gem.preprocess_output(gem.predict(left_eye, right_eye, hp_out), hp_out)
         
-        if (not len(preview_flags)==0):
+        if (not len(preview_flags) == 0) or file_flag:
             preview_frame = frame.copy()
+            if frame_count == 10:
+                print(preview_frame.shape, face_coords)
             if 'fd' in preview_flags:
-                cv2.rectangle(preview_frame, (face_coords[0], face_coords[1]), (face_coords[2], face_coords[3]), (255,0,0), 3)
-                preview_frame = croppedFace
+                preview_frame = cv2.rectangle(preview_frame, (face_coords[0], face_coords[1]), (face_coords[2], face_coords[3]), (255,0,0), 3)
+                
             if 'fld' in preview_flags:
-                cv2.rectangle(croppedFace, (eye_coords[0][0]-10, eye_coords[0][1]-10), (eye_coords[0][2]+10, eye_coords[0][3]+10), (0,255,0), 3)
-                cv2.rectangle(croppedFace, (eye_coords[1][0]-10, eye_coords[1][1]-10), (eye_coords[1][2]+10, eye_coords[1][3]+10), (0,255,0), 3)
-                preview_frame[face_coords[1]:face_coords[3], face_coords[0]:face_coords[2]] = croppedFace
+                #cropped_face = cv2.rectangle(cropped_face, (eye_coords[0][0]-10, eye_coords[0][1]-10), (eye_coords[0][2]+10, eye_coords[0][3]+10), (0,255,0), 3)
+                #cropped_face = cv2.rectangle(cropped_face, (eye_coords[1][0]-10, eye_coords[1][1]-10), (eye_coords[1][2]+10, eye_coords[1][3]+10), (0,255,0), 3)
+                #preview_frame[face_coords[1]:face_coords[3], face_coords[0]:face_coords[2]] = cropped_face
+                preview_frame = cv2.rectangle(preview_frame, (eye_coords[0][0]-10, eye_coords[0][1]-10), (eye_coords[0][2]+10, eye_coords[0][3]+10), (0,255,0), 3)
+                preview_frame = cv2.rectangle(preview_frame, (eye_coords[1][0]-10, eye_coords[1][1]-10), (eye_coords[1][2]+10, eye_coords[1][3]+10), (0,255,0), 3)
                 
             if 'hp' in preview_flags:
-                cv2.putText(preview_frame, 'Pose Angles: yaw:{:.2f} | pitch:{:.2f} | roll:{:.2f}'.format(hp_out[0],hp_out[1],hp_out[2]), (10, 20), cv2.FONT_HERSHEY_COMPLEX, 0.25, (0, 255, 0), 1)
+                preview_frame = cv2.putText(preview_frame, 'Pose Angles: yaw:{:.2f} | pitch:{:.2f} | roll:{:.2f}'.format(hp_out[0],hp_out[1],hp_out[2]), (10, 20), cv2.FONT_HERSHEY_COMPLEX, 1, (0, 255, 0), 1)
             
             if 'ge' in preview_flags:
+
                 x, y, w = int(gaze_vector[0]*12), int(gaze_vector[1]*12), 160
                 le = cv2.line(left_eye.copy(), (x-w, y-w), (x+w, y+w), (255,0,255), 2)
                 cv2.line(le, (x-w, y+w), (x+w, y-w), (255,0,255), 2)
                 re = cv2.line(right_eye.copy(), (x-w, y-w), (x+w, y+w), (255,0,255), 2)
                 cv2.line(re, (x-w, y+w), (x+w, y-w), (255,0,255), 2)
-                croppedFace[eye_coords[0][1]:eye_coords[0][3],eye_coords[0][0]:eye_coords[0][2]] = le
-                croppedFace[eye_coords[1][1]:eye_coords[1][3],eye_coords[1][0]:eye_coords[1][2]] = re
-                preview_frame[face_coords[1]:face_coords[3], face_coords[0]:face_coords[2]] = croppedFace
+                #cropped_face[eye_coords[0][1]:eye_coords[0][3],eye_coords[0][0]:eye_coords[0][2]] = le
+                #cropped_face[eye_coords[1][1]:eye_coords[1][3],eye_coords[1][0]:eye_coords[1][2]] = re
+                #preview_frame[face_coords[1]:face_coords[3], face_coords[0]:face_coords[2]] = cropped_face
+                preview_frame[eye_coords[0][1]:eye_coords[0][3],eye_coords[0][0]:eye_coords[0][2]] = le
+                preview_frame[eye_coords[1][1]:eye_coords[1][3],eye_coords[1][0]:eye_coords[1][2]] = re
                 
-            cv2.imshow('Sample',cv2.resize(preview_frame,(500,500)))
+            if frame_count == 10:
+                cv2.imshow('Frame 10',cv2.resize(preview_frame,(FRAME_WIDTH, FRAME_HEIGHT)))
+            if(not len(preview_flags) == 0) and frame_count %2 == 0:
+                cv2.imshow('Preview',cv2.resize(preview_frame,(FRAME_WIDTH, FRAME_HEIGHT)))
+            if file_flag:
+                out.write(cv2.resize(preview_frame, (FRAME_WIDTH, FRAME_HEIGHT)))
         
         #move the mouse pointer 
-        mouse_controller.move(new_mouse_coord[0],new_mouse_coord[1])  
+        try:
+            mouse_controller.move(new_mouse_coord[0],new_mouse_coord[1])
+        except pyautogui.FailSafeException:
+            pass
+        
+        if frame_count%2==0 and len(preview_flags) == 0:
+            cv2.imshow('Video',cv2.resize(frame,(500,500)))
 
         if key==27:
                 break
 
     logger.error('VideoStream ended...')
-    cv2.destroyAllWindows()
+    out.release()
     input_feed.close()
+    #cv2.destroyAllWindows()    
      
     
 
