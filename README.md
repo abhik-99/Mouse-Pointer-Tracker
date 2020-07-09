@@ -27,6 +27,7 @@ pyautogui
 
 ## Directory Structure
 
+
 ## Project Set Up and Installation
 
 1. Clone the project from the GitHub Repo.
@@ -46,7 +47,8 @@ source /opt/intel/openvino/bin/setupvars.sh
 ## Demo
 
 Watch the Output of the project at this link:
-[![Demo Output](https://youtu.be/2Mq5B725Z8I)](https://youtu.be/2Mq5B725Z8I)
+
+[![Project Output](https://youtu.be/2Mq5B725Z8I)](https://youtu.be/2Mq5B725Z8I "Project Demo")
 
 In the project Root directory, run the following command.
 
@@ -57,7 +59,7 @@ python src/main.py -i bin/demo.mp4 -fd IR/intel/face-detection-adas-binary-0001/
 ## Documentation
 
 Pipeline of the Models Used:
-[![Model Pipeline](./bin/pipeline.png)](./bin/pipelin.png)
+[![Model Pipeline](./images/pipeline.png)](./images/pipelin.png)
 
 The following are the arguments that can be passed to the **src/main.py** file.
 
@@ -111,10 +113,58 @@ optional arguments:
 ```
 
 ## Benchmarks
-*TODO:* Include the benchmark results of running your model on multiple hardwares and multiple model precisions. Your benchmarks can include: model loading time, input/output processing time, model inference time etc.
+The following benchmarks were obtained using the hardwares given below:
+1. Intel Core i5-6500TE CPU
+2. Intel Core i5-6500TE GPU
+3. IEI Mustang F100-A10 FPGA
+4. Intel Xeon E3-1268L v5 CPU
+5. Intel Atom x7-E3950 UP2 GPU
+
+### INT8
+
+#### FPS
+
+[![FPS INT8](./images/fps_int8.png)](./images/fps_int8.png)
+
+#### Inference Time
+
+[![Inference time](./images/inference_time_int8.png)](./images/inference_time_int8.png)
+
+#### Model Loading Time
+
+[![Loading Time](./images/model_loading_time_int8.png)](./images/model_loading_time_int8.png)
+
+### FP16
+
+#### FPS
+
+[![FPS FP16](./images/fps_fp16.png)](./images/fps_fp16.png)
+
+#### Inference Time
+
+[![Inference time](./images/inference_time_fp16.png)](./images/inference_time_fp16.png)
+
+#### Model Loading Time
+
+[![Loading Time](./images/model_loading_time_fp16.png)](./images/model_loading_time_fp16.png)
+
+### FP32
+
+#### FPS
+
+[![FPS FP32](./images/fps_fp32.png)](./images/fps_fp32.png)
+
+#### Inference Time
+
+[![Inference time](./images/inference_time_fp16.png)](./images/inference_time_fp16.png)
+
+#### Model Loading Time
+
+[![Loading Time](./images/model_loading_time_fp32.png)](./images/model_loading_time_fp32.png)
+
 
 ## Results
 *TODO:* Discuss the benchmark results and explain why you are getting the results you are getting. For instance, explain why there is difference in inference time for FP32, FP16 and INT8 models.
 
 ### Edge Cases
-There will be certain situations that will break your inference flow. For instance, lighting changes or multiple people in the frame. Explain some of the edge cases you encountered in your project and how you solved them to make your project more robust.
+
