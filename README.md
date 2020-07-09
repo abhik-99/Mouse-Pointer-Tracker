@@ -1,5 +1,7 @@
 # Computer Pointer Controller
 
+Project GitHub Link:- https://github.com/abhik-99/Mouse-Pointer-Tracker
+
 Computer Pointer Controller is a project implemented using Intel OpenVINO that utlizes face detection, head pose estimation and gaze estimation from the face detected to control the  movements of the mouse pointer. The input to the **src/main.py** file can be a video. A sample video has been provided in the bin directory. Please refer to the Directory Structure for more information.
 
 **Author**: Abhik Banerjee
@@ -45,7 +47,7 @@ Given below is the brief directory structure of the project.
 |
 |- images                                    # images referenced in the README.md
 |
-|- IR                                        # contains the Intermediate Representation of the preferred precision
+|- IR                                        # (not present in submission)contains the Intermediate Representation of the preferred precision
 |
 |- src                                       # source directory for code files
 |   | - main.py                              # This file needs to run for testing/demo-ing the project
