@@ -6,7 +6,9 @@
 *TODO:* Explain the setup procedures to run your project. For instance, this can include your project directory structure, the models you need to download and where to place them etc. Also include details about how to install the dependencies your project requires.
 
 ## Demo
-*TODO:* Explain how to run a basic demo of your model.
+```
+ python src/main.py -i bin/demo.mp4 -fd IR/intel/face-detection-adas-binary-0001/FP32-INT1/face-detection-adas-binary-0001.xml -fl IR/intel/landmarks-regression-retail-0009/FP16/landmarks-regression-retail-0009.xml -hp IR/intel/head-pose-estimation-adas-0001/FP16/head-pose-estimation-adas-0001.xml -ge IR/intel/gaze-estimation-adas-0002/FP16/gaze-estimation-adas-0002.xml
+```
 
 ## Documentation
 *TODO:* Include any documentation that users might need to better understand your project code. For instance, this is a good place to explain the command line arguments that your project supports.

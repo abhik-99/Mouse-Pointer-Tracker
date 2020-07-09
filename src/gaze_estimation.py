@@ -1,6 +1,7 @@
 
 import os
 import numpy as np
+import math
 import cv2
 from openvino.inference_engine import IECore
 
@@ -41,7 +42,7 @@ class GazeEstimationModel:
 
         return self.net
 
-    def predict(self, head_pose_angles, l_eye, r_eye):
+    def predict(self, l_eye, r_eye, head_pose_angles):
         '''
         TODO: You will need to complete this method.
         This method is meant for running predictions on the input image.
@@ -64,20 +65,18 @@ class GazeEstimationModel:
         Before feeding the data into the model for inference,
         you might have to preprocess it. This function is where you can do that.
         '''
-        img = cv2.resize(image, tuple(self.input_shape[2:][::-1])) #resizing the image
-        img = img.transpose((2,0,1)) #brining channel to the front.
-        img = img.reshape(1, *img.shape)
-
+        img = cv2.resize(np.float32(image), (self.input_shape[3], self.input_shape[2]))
+        img = np.transpose(np.expand_dims(img , axis=0), (0,3,1,2))
         return img
 
-    def preprocess_output(self, outputs):
+    def preprocess_output(self, outputs, head_pose_angles):
         '''
         Before feeding the output of this model to the next model,
         you might have to preprocess the output. This function is where you can do that.
         '''
         gaze_vector = outputs[self.output_names[0]].tolist()[0]
         #gaze_vector = gaze_vector / cv2.norm(gaze_vector)
-        rollValue = hpa[2] #angle_r_fc output from HeadPoseEstimation model
+        rollValue = head_pose_angles[2] #angle_r_fc output from HeadPoseEstimation model
         cosValue = math.cos(rollValue * math.pi / 180.0)
         sinValue = math.sin(rollValue * math.pi / 180.0)
         

@@ -57,9 +57,10 @@ def build_argparser():
                              'CPU, GPU, FPGA or MYRIAD is acceptable. Sample '
                              'will look for a suitable plugin for device '
                              'specified (CPU by default). Please note that only CPU is available in Author\'s Workstation')
-    parser.add_argument('-o', '--output_format', type = str, default = 'file', required = False, 
-                        help = 'If the parameter is \'file\', a file of name \'output.mp4\' is created in the current directory.'
-                                'If the parameter is \'visual\', the frames are displayed.')
+    parser.add_argument('-o', '--output_file', type = str, default = 'n', required = False, 
+                        help = 'If specified, then the output file by the name \'output.<extension>\'',
+                        'is generated in the ./src directory. This file shows the detection output.',
+                        'Accepted Values:- [n(default), y]')
     
     return parser
 
@@ -125,7 +126,7 @@ def main():
             break
         frame_count+=1
 
-        if frame_count%5==0:
+        if frame_count%2==0:
             cv2.imshow('video',cv2.resize(frame,(500,500)))
     
         key = cv2.waitKey(60)
@@ -141,7 +142,7 @@ def main():
                                 - Facial Landmark Detection Model -  
         """
 
-        croppedFace, _ = fdm.preprocess_output(frame.copy(), fdm.predict(frame.copy(), args.prob_threshold))
+        croppedFace, _ = fdm.preprocess_output(frame.copy(), fdm.predict(frame.copy()), args.prob_threshold)
 
         if type(croppedFace)==int:
             logger.error('Unable to detect the face.')
@@ -149,21 +150,21 @@ def main():
                 break
             continue
         
-        hp_out = hpem.preprocess_output( hpem.predict(fdm.preprocess_output(croppedFace.copy()) ))
+        hp_out = hpem.preprocess_output(hpem.predict(croppedFace.copy()))
         
         left_eye, right_eye, eye_coords = fldm.preprocess_output(frame.copy(), fldm.predict(croppedFace.copy()))
         
-        new_mouse_coord, gaze_vector = gem.preprocess_output(gem.predict(left_eye, right_eye, hp_out))
+        new_mouse_coord, gaze_vector = gem.preprocess_output(gem.predict(left_eye, right_eye, hp_out), hp_out)
         
         if (not len(preview_flags)==0):
             preview_frame = frame.copy()
             if 'fd' in preview_flags:
-                #cv2.rectangle(preview_frame, (face_coords[0], face_coords[1]), (face_coords[2], face_coords[3]), (255,0,0), 3)
+                cv2.rectangle(preview_frame, (face_coords[0], face_coords[1]), (face_coords[2], face_coords[3]), (255,0,0), 3)
                 preview_frame = croppedFace
             if 'fld' in preview_flags:
                 cv2.rectangle(croppedFace, (eye_coords[0][0]-10, eye_coords[0][1]-10), (eye_coords[0][2]+10, eye_coords[0][3]+10), (0,255,0), 3)
                 cv2.rectangle(croppedFace, (eye_coords[1][0]-10, eye_coords[1][1]-10), (eye_coords[1][2]+10, eye_coords[1][3]+10), (0,255,0), 3)
-                #preview_frame[face_coords[1]:face_coords[3], face_coords[0]:face_coords[2]] = croppedFace
+                preview_frame[face_coords[1]:face_coords[3], face_coords[0]:face_coords[2]] = croppedFace
                 
             if 'hp' in preview_flags:
                 cv2.putText(preview_frame, 'Pose Angles: yaw:{:.2f} | pitch:{:.2f} | roll:{:.2f}'.format(hp_out[0],hp_out[1],hp_out[2]), (10, 20), cv2.FONT_HERSHEY_COMPLEX, 0.25, (0, 255, 0), 1)
@@ -176,9 +177,9 @@ def main():
                 cv2.line(re, (x-w, y+w), (x+w, y-w), (255,0,255), 2)
                 croppedFace[eye_coords[0][1]:eye_coords[0][3],eye_coords[0][0]:eye_coords[0][2]] = le
                 croppedFace[eye_coords[1][1]:eye_coords[1][3],eye_coords[1][0]:eye_coords[1][2]] = re
-                #preview_frame[face_coords[1]:face_coords[3], face_coords[0]:face_coords[2]] = croppedFace
+                preview_frame[face_coords[1]:face_coords[3], face_coords[0]:face_coords[2]] = croppedFace
                 
-        cv2.imshow('Sample',cv2.resize(preview_frame,(500,500)))
+            cv2.imshow('Sample',cv2.resize(preview_frame,(500,500)))
         
         #move the mouse pointer 
         mouse_controller.move(new_mouse_coord[0],new_mouse_coord[1])  
