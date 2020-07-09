@@ -3,11 +3,15 @@
 Computer Pointer Controller is a project implemented using Intel OpenVINO that utlizes face detection, head pose estimation and gaze estimation from the face detected to control the  movements of the mouse pointer. The input to the **src/main.py** file can be a video. A sample video has been provided in the bin directory. Please refer to the Directory Structure for more information.
 
 **Author**: Abhik Banerjee
+
 **Contact**: abhik@abhikbanerjee.com, abhik.banerjee.1999@gmail.com
+
 **Date Of Submission**: 10th July, 2020.
 
 **Language Used**: Python 3.8
+
 **Intel OpenVINO**: 2020.3
+
 **Required Packages**:
 (mentioned in requirements.txt)
 ```
@@ -41,6 +45,9 @@ source /opt/intel/openvino/bin/setupvars.sh
 
 ## Demo
 
+Watch the Output of the project at this link:
+[![Demo Output](https://youtu.be/2Mq5B725Z8I)](https://youtu.be/2Mq5B725Z8I)
+
 In the project Root directory, run the following command.
 
 ```
@@ -48,7 +55,9 @@ python src/main.py -i bin/demo.mp4 -fd IR/intel/face-detection-adas-binary-0001/
 ```
 
 ## Documentation
+
 Pipeline of the Models Used:
+[![Model Pipeline](./bin/pipeline.png)](./bin/pipelin.png)
 
 The following are the arguments that can be passed to the **src/main.py** file.
 
