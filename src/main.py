@@ -181,7 +181,8 @@ def main():
         if (not len(preview_flags) == 0) or file_flag:
             preview_frame = frame.copy()
             if frame_count == 10:
-                print(preview_frame.shape, face_coords)
+                print(preview_flags, preview_frame.shape, face_coords)
+
             if 'fd' in preview_flags:
                 preview_frame = cv2.rectangle(preview_frame, (face_coords[0], face_coords[1]), (face_coords[2], face_coords[3]), (255,0,0), 3)
                 
@@ -193,7 +194,7 @@ def main():
                 preview_frame = cv2.rectangle(preview_frame, (eye_coords[1][0]-10, eye_coords[1][1]-10), (eye_coords[1][2]+10, eye_coords[1][3]+10), (0,255,0), 3)
                 
             if 'hp' in preview_flags:
-                preview_frame = cv2.putText(preview_frame, 'Pose Angles: yaw:{:.2f} | pitch:{:.2f} | roll:{:.2f}'.format(hp_out[0],hp_out[1],hp_out[2]), (10, 20), cv2.FONT_HERSHEY_COMPLEX, 1, (0, 255, 0), 1)
+                cv2.putText(preview_frame, 'Pose Angles: yaw:{:.2f} | pitch:{:.2f} | roll:{:.2f}'.format(hp_out[0],hp_out[1],hp_out[2]), (20, 20), cv2.FONT_HERSHEY_COMPLEX, 3, (0, 255, 0), 2)
             
             if 'ge' in preview_flags:
 
