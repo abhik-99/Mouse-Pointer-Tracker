@@ -13,8 +13,12 @@ from mouse_controller import MouseController
 from argparse import ArgumentParser
 from input_feeder import InputFeeder
 
-FRAME_WIDTH = 500
-FRAME_HEIGHT = 500
+FRAME_WIDTH = 600
+FRAME_HEIGHT = 600
+
+GAZE_ARROW_WIDTH = 5
+GAZE_ARROW_LENGTH = 100
+
 
 def build_argparser():
     '''
@@ -65,8 +69,10 @@ def build_argparser():
     parser.add_argument('-o', '--output_file', type = str, default = 'y', required = False, 
                         help = 'If specified, then the output file by the name \'output.<extension>\''
                         'is generated in the ./src directory. This file shows the detection output.'
-                        'Accepted Values:- [n(default), y]. '
+                        'Accepted Values:- [y(default), n]. '
                         'Please note that this option is only available for Linux at the moment.')
+    parser.add_argument('-z', '--zoomed', type = bool, default = False, required= False, 
+                        help = 'If True then displays only the cropped face in the video. The output file, however, shows full image.')
     
     return parser
 
@@ -146,9 +152,6 @@ def main():
             break
         
         frame_count+=1
-
-        if frame_count == 15:
-            break
     
         key = cv2.waitKey(60)
 
@@ -159,9 +162,9 @@ def main():
         3. Send the processed output to the next model.
 
         Model Sequence:- 
-                                - Head Pose Estimation Model      -
-        Face Detection Model <                                      > Gaze Estimation Model 
-                                - Facial Landmark Detection Model -  
+                                -   Head Pose Estimation Model      -
+        Face Detection Model <(First Head Pose and Then Facial Landmark)>Gaze Estimation Model 
+                                -   Facial Landmark Detection Model -  
         """
 
         cropped_face, face_coords = fdm.preprocess_output(frame.copy(), fdm.predict(frame.copy()), args.prob_threshold)
@@ -174,45 +177,53 @@ def main():
         
         hp_out = hpem.preprocess_output(hpem.predict(cropped_face.copy()))
         
-        left_eye, right_eye, eye_coords = fldm.preprocess_output(frame.copy(), fldm.predict(cropped_face.copy()))
+        left_eye, right_eye, eye_coords = fldm.preprocess_output(cropped_face.copy(), fldm.predict(cropped_face.copy()))
         
         new_mouse_coord, gaze_vector = gem.preprocess_output(gem.predict(left_eye, right_eye, hp_out), hp_out)
         
         if (not len(preview_flags) == 0) or file_flag:
             preview_frame = frame.copy()
-            if frame_count == 10:
-                print(preview_flags, preview_frame.shape, face_coords)
+            
 
             if 'fd' in preview_flags:
-                preview_frame = cv2.rectangle(preview_frame, (face_coords[0], face_coords[1]), (face_coords[2], face_coords[3]), (255,0,0), 3)
-                
+                preview_frame = cv2.rectangle(preview_frame, (face_coords[0], face_coords[1]), (face_coords[2], face_coords[3]), (0,0,255), 3)
+                cropped_face = preview_frame[face_coords[1]:face_coords[3], face_coords[0]:face_coords[2]]
+            
             if 'fld' in preview_flags:
-                #cropped_face = cv2.rectangle(cropped_face, (eye_coords[0][0]-10, eye_coords[0][1]-10), (eye_coords[0][2]+10, eye_coords[0][3]+10), (0,255,0), 3)
-                #cropped_face = cv2.rectangle(cropped_face, (eye_coords[1][0]-10, eye_coords[1][1]-10), (eye_coords[1][2]+10, eye_coords[1][3]+10), (0,255,0), 3)
-                #preview_frame[face_coords[1]:face_coords[3], face_coords[0]:face_coords[2]] = cropped_face
-                preview_frame = cv2.rectangle(preview_frame, (eye_coords[0][0]-10, eye_coords[0][1]-10), (eye_coords[0][2]+10, eye_coords[0][3]+10), (0,255,0), 3)
-                preview_frame = cv2.rectangle(preview_frame, (eye_coords[1][0]-10, eye_coords[1][1]-10), (eye_coords[1][2]+10, eye_coords[1][3]+10), (0,255,0), 3)
+                cropped_face = cv2.rectangle(cropped_face, (eye_coords[0][0]-10, eye_coords[0][1]-10), (eye_coords[0][2]+10, eye_coords[0][3]+10), (0,255,0), 3)
+                cropped_face = cv2.rectangle(cropped_face, (eye_coords[1][0]-10, eye_coords[1][1]-10), (eye_coords[1][2]+10, eye_coords[1][3]+10), (0,255,0), 3)
+                
+                preview_frame[face_coords[1]:face_coords[3], face_coords[0]:face_coords[2]] = cropped_face
                 
             if 'hp' in preview_flags:
-                cv2.putText(preview_frame, 'Pose Angles: yaw:{:.2f} | pitch:{:.2f} | roll:{:.2f}'.format(hp_out[0],hp_out[1],hp_out[2]), (20, 20), cv2.FONT_HERSHEY_COMPLEX, 3, (0, 255, 0), 2)
+                cv2.putText(preview_frame, 'Pose Angles: yaw: {:.2f} | pitch: {:.2f} | roll: {:.2f}'.format(hp_out[0],hp_out[1],hp_out[2]), (20, 40), cv2.FONT_HERSHEY_COMPLEX, 1, (0, 255, 0), 2)
             
             if 'ge' in preview_flags:
 
-                x, y, w = int(gaze_vector[0]*12), int(gaze_vector[1]*12), 160
-                le = cv2.line(left_eye.copy(), (x-w, y-w), (x+w, y+w), (255,0,255), 2)
-                cv2.line(le, (x-w, y+w), (x+w, y-w), (255,0,255), 2)
-                re = cv2.line(right_eye.copy(), (x-w, y-w), (x+w, y+w), (255,0,255), 2)
-                cv2.line(re, (x-w, y+w), (x+w, y-w), (255,0,255), 2)
-                #cropped_face[eye_coords[0][1]:eye_coords[0][3],eye_coords[0][0]:eye_coords[0][2]] = le
-                #cropped_face[eye_coords[1][1]:eye_coords[1][3],eye_coords[1][0]:eye_coords[1][2]] = re
-                #preview_frame[face_coords[1]:face_coords[3], face_coords[0]:face_coords[2]] = cropped_face
-                preview_frame[eye_coords[0][1]:eye_coords[0][3],eye_coords[0][0]:eye_coords[0][2]] = le
-                preview_frame[eye_coords[1][1]:eye_coords[1][3],eye_coords[1][0]:eye_coords[1][2]] = re
+                x, y = int(gaze_vector[0] *GAZE_ARROW_LENGTH) , - int(gaze_vector[1]*GAZE_ARROW_LENGTH)
                 
-            if frame_count == 10:
-                cv2.imshow('Frame 10',cv2.resize(preview_frame,(FRAME_WIDTH, FRAME_HEIGHT)))
+                
+                le_mid_x = int((eye_coords[0][0] + eye_coords[0][2])/2)
+                le_mid_y = int((eye_coords[0][1] + eye_coords[0][3])/2)
+                re_mid_x = int((eye_coords[1][0] + eye_coords[1][2])/2)
+                re_mid_y = int((eye_coords[1][1] + eye_coords[1][3])/2)
+
+                cv2.arrowedLine(cropped_face, (le_mid_x, le_mid_y),
+                ((le_mid_x + x), (le_mid_y + y)),
+                (255, 0 , 0), GAZE_ARROW_WIDTH)
+                cv2.arrowedLine(cropped_face, (re_mid_x, re_mid_y),
+                ((re_mid_x + x), (re_mid_y + y)),
+                (255, 0, 0), GAZE_ARROW_WIDTH)
+
+                preview_frame[face_coords[1]:face_coords[3], face_coords[0]:face_coords[2]] = cropped_face
+                
+           
             if(not len(preview_flags) == 0) and frame_count %2 == 0:
-                cv2.imshow('Preview',cv2.resize(preview_frame,(FRAME_WIDTH, FRAME_HEIGHT)))
+                if args.zoomed:
+                    cv2.imshow('Cropped Face',cv2.resize(cropped_face,(FRAME_WIDTH, FRAME_HEIGHT)))
+                else:
+                    cv2.imshow('Preview',cv2.resize(preview_frame,(FRAME_WIDTH, FRAME_HEIGHT)))
+                
             if file_flag:
                 out.write(cv2.resize(preview_frame, (FRAME_WIDTH, FRAME_HEIGHT)))
         
@@ -223,15 +234,16 @@ def main():
             pass
         
         if frame_count%2==0 and len(preview_flags) == 0:
-            cv2.imshow('Video',cv2.resize(frame,(500,500)))
+            cv2.imshow('Video',cv2.resize(frame,(FRAME_WIDTH, FRAME_HEIGHT)))
 
         if key==27:
                 break
 
-    logger.error('VideoStream ended...')
-    out.release()
+    logger.error('VideoStream ended.')
+    if args.output_file.lower() == 'y': 
+        out.release()
     input_feed.close()
-    #cv2.destroyAllWindows()    
+    cv2.destroyAllWindows()    
      
     
 

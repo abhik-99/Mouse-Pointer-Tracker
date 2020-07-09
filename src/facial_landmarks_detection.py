@@ -24,7 +24,7 @@ class FacialLandmarksDetectionModel:
         self.model = self.core.read_network(model = model_xml, weights = model_bin)
 
         return
-
+    
     def load_model(self):
         '''
         TODO: You will need to complete this method.
@@ -40,6 +40,9 @@ class FacialLandmarksDetectionModel:
         self.net = self.core.load_network(self.model, self.device)
 
         return self.net
+
+    def get_input_shape(self):
+        return self.input_shape
 
     def predict(self, image):
         '''
@@ -76,14 +79,16 @@ class FacialLandmarksDetectionModel:
         you might have to preprocess the output. This function is where you can do that.
         '''
         outs = outputs[self.output_names][0]
- 
+
+        #coords = (lefteye_x, lefteye_y, righteye_x, righteye_y) - coords is the tuple of eye coordinates
         coords = (outs[0].tolist()[0][0], outs[1].tolist()[0][0], outs[2].tolist()[0][0], outs[3].tolist()[0][0])
         
-        h=image.shape[0]
-        w=image.shape[1]
+        image_width, image_height = image.shape[:-1]
+        model_width, model_height = tuple(self.input_shape[2:][::-1])
+        #print(image_width, image_height, model_width, model_height)
 
-        coords = coords* np.array([w, h, w, h])
-        coords = coords.astype(np.int32) #(lefteye_x, lefteye_y, righteye_x, righteye_y)
+        coords = coords * np.array([image_height, image_width, image_height, image_width])
+        coords = coords.astype(np.int32) 
         
         re_xmin=coords[2]-10
         re_ymin=coords[3]-10
