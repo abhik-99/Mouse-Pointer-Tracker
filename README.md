@@ -6,6 +6,12 @@ Computer Pointer Controller is a project implemented using Intel OpenVINO that u
 
 **Contact**: abhik@abhikbanerjee.com, abhik.banerjee.1999@gmail.com
 
+**Profile**:
+
+LinkedIn:- [![LinkedIn](https://www.linkedin.com/in/banerjee-1331/)](https://www.linkedin.com/in/banerjee-1331/)
+
+Intel Dev Community:- [![Intel Dev Community](https://community.intel.com/t5/user/viewprofilepage/user-id/114753)](https://community.intel.com/t5/user/viewprofilepage/user-id/114753)
+
 **Date Of Submission**: 10th July, 2020.
 
 **Language Used**: Python 3.8
@@ -27,6 +33,34 @@ pyautogui
 
 ## Directory Structure
 
+The complete directory structure can be browsed [![here](./directory_structure.txt)](./directory_structure.txt) 
+
+Given below is the brief directory structure of the project.
+
+```
+|- bin                                       # stores the demo files
+|   |- demo.mp4
+|
+|- env                                       # was used as virtual environment for isolation
+|
+|- images                                    # images referenced in the README.md
+|
+|- IR                                        # contains the Intermediate Representation of the preferred precision
+|
+|- src                                       # source directory for code files
+|   | - main.py                              # This file needs to run for testing/demo-ing the project
+|   | - face_detection.py                    # Model Specific Wrapper Class files derived from provided model.py artifact
+|   | - facial_landmarks_detection.py        # and then adapted as per the network to be used with.
+|   | - gaze_estimation.py
+|   | - head_pose_estimation.py
+|   | - input_feeder.py                      # This is used to capture the feed from either video or camera.
+|   | - mouse_controller.py                  # Abstraction file for controlling the mouse pointer on screen.
+|
+| directory_structure.txt
+| output.mp4
+| README.md
+| requirements.txt
+```
 
 ## Project Set Up and Installation
 
@@ -164,7 +198,9 @@ The following benchmarks were obtained using the hardwares given below:
 
 
 ## Results
-*TODO:* Discuss the benchmark results and explain why you are getting the results you are getting. For instance, explain why there is difference in inference time for FP32, FP16 and INT8 models.
 
+As can be observed from the benchmarks, the Model Loading Time of CPUs is the least in all cases and that of FPGAs are most. This is because FPGAs are use case specific as such a configuration which is adopted into the FPGA is meant to last. However, CPUs, while being slow in terms of compute, can load different instruction sets faster. In case of FPS, the NCS outperforms all other hardwares tested on. The GPU is shown to have poor performance. The CPUs offer a moderate performance with Intel Core i5 6th Gen being better. 
+It is advisable to use FP16 on Edge Devices requiring higher accuracy. INT8 offers even faster results however this may lead to drop in terms of accuracy. FP32 is a poor fit on edge devices. In the same vector space, FP16 precision can help perform double the number of floating point operations. It, thus, offers a good balance between precisions.
 ### Edge Cases
 
+In case of presence of multiple faces in the frame, only the first detected face is used. Since there might be change in the person whose face is detected, a constant target of "using just the first detection" is preferable. Moreover, a default probability threshold helps in removing false detections.
